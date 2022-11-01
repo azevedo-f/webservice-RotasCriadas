@@ -1,0 +1,115 @@
+
+####################################################################################################################################
+#                                         wEBSERVICE - Estoque de componentes eletrônicos                                          #
+#                                           Alunas: Eduarda S. Gavião e Fernanda Azevedo                                           #
+####################################################################################################################################
+#                                             DISCIPLINA :  SISTEMAS DISTRIBUÍDOS                                                  #
+####################################################################################################################################
+# Definição dos campos:
+# Nome
+# Preço
+# Quantidade
+
+# Bibliotecas:
+import cherrypy
+
+class Components:
+
+    exposed = True
+
+    def __init__(self):
+        self.list_components={}
+        self.id=0
+
+    def POST(self,**args):  # Método para criar os componentes       
+
+       if ('name' in args.keys() and 'price' in args.keys() and 'quantity' in args.keys()):
+            
+            if len(args['name']) == 0:
+                raise cherrypy.HTTPError(400)  # Mensagem de Bad Request
+
+            elif not args['price'].isdigit():
+                raise cherrypy.HTTPError(422) # A requisição está bem formada mas inabilitada para ser seguida devido a erros semânticos.
+
+            elif not args['quantity'].isdigit():
+                raise cherrypy.HTTPError(422) # A requisição está bem formada mas inabilitada para ser seguida devido a erros semânticos.
+
+            else:
+               self.list_components[str(self.id)] = {
+                 'name':args['name'],
+                 'price':args['price'],
+                 'quantity':args['quantity']
+                }
+               self.id += 1
+               cherrypy.response.status = "201" # Mensagem de criado com sucesso
+               return "<div>" + str(self.id-1) + "</div>"
+    
+       else:
+            raise cherrypy.HTTPError(400) # Mensagem de Bad Request
+
+    def GET(self,id=None):        
+        if (id is None): # Busca Total
+            retorno = ''
+            for item in self.list_components.items():                
+                retorno += '</p>ID: ' + item[0] + '<br>Nome: ' + item[1]['name'] + '<br>Preço: ' + item[1]['price'] + '<br>Quantidade: ' + item[1]['quantity']
+                retorno += '</p>'
+            return "<div>" + retorno + "</div>"           
+            cherrypy.response.status = "200"  # Mensagem de ação bem sucedida
+
+        elif(int(id) >= 0 and int(id) < self.id): # Busca Parcial
+                retorno = '<p>Nome: ' + self.list_components[str(id)]['name'] + '<br>Preço: ' + self.list_components[str(id)]['price'] + '<br>Quantidade: ' + self.list_components[str(id)]['quantity'] + '</p>'
+                return '<div>' + retorno + '</div>' 
+                cherrypy.response.status = "200"  # Mensagem de ação bem sucedida
+
+        else:
+            raise cherrypy.HTTPError(404) # Mensagem de erro 404 Not Found
+
+    def PUT(self, **args): # Função para atualizar os componentes
+
+        if ('id' in args.keys()):
+            if(int(args['id']) >= 0 and int(args['id']) < self.id):
+                if len(args['name']) == 0:
+                    raise cherrypy.HTTPError(400)  # Mensagem de Bad Request
+                #Verifica se valor quantidade são números inteiros e se não são negativos
+                if not args['price'].isdigit():
+                    raise cherrypy.HTTPError(422) # A requisição está bem formada mas inabilitada para ser seguida devido a erros semânticos.
+                if not args['quantity'].isdigit():
+                    raise cherrypy.HTTPError(422)  # A requisição está bem formada mas inabilitada para ser seguida devido a erros semânticos.
+                else:
+                    id= args['id']
+                    self.list_components[id] = {
+                        'name':args['name'],
+                        'price':args['price'],
+                        'quantity':args['quantity']
+                    }                 
+
+                    self.list_components[id]['name']:args['name'] or self.list_components[id]['name']
+                    self.list_components[id]['price']:args['price'] or self.list_components[id]['price'] 
+                    self.list_components[id]['quantity']:args['quantity'] or self.list_components[id]['quantity']
+                    retorno = '<p>ID: '+ id + '<br>Nome: ' + self.list_components[str(id)]['name'] + '<br>Valor: ' + self.list_components[str(id)]['price'] + '<br>Quantidade: ' + self.list_components[str(id)]['quantity']
+                    return '<div>' + retorno + '</div>'
+            else:
+                raise cherrypy.HTTPError(404) #Mensagem de erro Not Found
+        else:
+            raise cherrypy.HTTPError(400) # Mensagem de Bad Request
+
+    def DELETE(self,id):
+        if(int(id) >= 0 and int(id) < self.id):               
+                self.list_components.pop(id)   
+                cherrypy.response.status = "200" # Mensagem de ação bem sucedida                         
+        else:
+            raise cherrypy.HTTPError(404)  # Mensagem de erro 404 Not Found
+
+def main():
+    cherrypy.tree.mount(
+        Components(), '/components',
+        {'/':
+            {'request.dispatch': cherrypy.dispatch.MethodDispatcher()}
+        }
+    )
+    cherrypy.config.update({'server.socket_port': 8080})
+    cherrypy.engine.start()
+    cherrypy.engine.block()
+
+if __name__ == '__main__':
+    main()
